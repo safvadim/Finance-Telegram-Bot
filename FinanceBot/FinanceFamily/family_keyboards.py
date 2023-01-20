@@ -1,19 +1,19 @@
 from aiogram.filters.callback_data import CallbackData
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from FinanceServer.family_finance_connection import FamilyFinanceServerConfig
+from FinanceServer.family_finance_connection import family_finance_server
 
 
-class AccountCallback(CallbackData, prefix='F_account'):
+class FAccountCallback(CallbackData, prefix='F_account'):
     call_data: str
     call: str
 
 
-class AddConsumptionCallback(CallbackData, prefix='F_add'):
+class FAddConsumptionCallback(CallbackData, prefix='F_add'):
     call_data: str
     call_add: str
 
 
-class AddIncomeCallback(CallbackData, prefix='F_add_income'):
+class FAddIncomeCallback(CallbackData, prefix='F_add_income'):
     call_data: str
     call_add: str
 
@@ -23,19 +23,24 @@ class FAnalysisExpensesCallback(CallbackData, prefix='F_analysis_expenses'):
     call_analysis: str
 
 
-class AnalysisIncomeCallback(CallbackData, prefix='F_analysis_income'):
+class FAnalysisIncomeCallback(CallbackData, prefix='F_analysis_income'):
     call_data: str
     call_analysis: str
 
 
-class LimitsCallback(CallbackData, prefix='F_limits'):
+class FLimitsCallback(CallbackData, prefix='F_limits'):
     call_data: str
     call_limits: str
 
 
-class DelLimitsCallback(CallbackData, prefix='F_dellimits'):
+class FDelLimitsCallback(CallbackData, prefix='F_dellimits'):
     call_data: str
     call_dellimits: str
+
+
+class FListDelLimitsCallback(CallbackData, prefix='F_listdellimits'):
+    call_data: str
+    call_listdellimits: str
 
 
 # TODO Семейный Кошелек
@@ -105,36 +110,39 @@ def create_another_account_keyboard():
 
 
 # TODO Выбор счета
-def choose_an_account_keyboard():
+def choose_an_account_keyboard(user_id):
     choose_an_account_kb = InlineKeyboardBuilder()
-    for list_account in FamilyFinanceServerConfig.show_list:
+    connection = family_finance_server.show_list_of_accounts(user_id=user_id)
+    for list_account in connection:
         choose_an_account_kb.button(
             text=list_account.split('.')[1],
-            callback_data=AccountCallback(call_data=list_account, call='call').pack())
+            callback_data=FAccountCallback(call_data=list_account, call='F_call').pack())
     choose_an_account_kb.button(text="Назад", callback_data="F_back_to_wallet")
     choose_an_account_kb.adjust(1)
     return choose_an_account_kb.as_markup()
 
 
-def income_account_selection():
+def income_account_selection(user_id):
     income_account_selection_kb = InlineKeyboardBuilder()
-    for list_account in FamilyFinanceServerConfig.show_list:
+    connection = family_finance_server.show_list_of_accounts(user_id=user_id)
+    for list_account in connection:
         income_account_selection_kb.button(
             text=list_account.split('.')[1],
-            callback_data=AddIncomeCallback(call_data=list_account, call_add='call_add').pack())
+            callback_data=FAddIncomeCallback(call_data=list_account, call_add='F_call_add').pack())
     income_account_selection_kb.adjust(1)
     return income_account_selection_kb.as_markup()
 
 
-def income_analysis_account():
+def income_analysis_account(user_id):
     account_selection_for_analysis_kb = InlineKeyboardBuilder()
-    for list_account in FamilyFinanceServerConfig.show_list:
+    connection = family_finance_server.show_list_of_accounts(user_id=user_id)
+    for list_account in connection:
         account_selection_for_analysis_kb.button(
             text=list_account.split('.')[1],
-            callback_data=AnalysisIncomeCallback(call_data=list_account, call_analysis='call_analysis').pack())
+            callback_data=FAnalysisIncomeCallback(call_data=list_account, call_analysis='F_call_analysis').pack())
     account_selection_for_analysis_kb.button(
         text="Назад",
-        callback_data="back_to_wallet")
+        callback_data="F_back_to_wallet")
     account_selection_for_analysis_kb.adjust(1)
     return account_selection_for_analysis_kb.as_markup()
 
@@ -153,12 +161,13 @@ def add_keyboard():
     return add_kb.as_markup()
 
 
-def select_account_for_expenses():
+def select_account_for_expenses(user_id):
     select_account_for_expenses_kb = InlineKeyboardBuilder()
-    for list_account in FamilyFinanceServerConfig.show_list:
+    connection = family_finance_server.show_list_of_accounts(user_id=user_id)
+    for list_account in connection:
         select_account_for_expenses_kb.button(
             text=list_account.split('.')[1],
-            callback_data=AddConsumptionCallback(call_data=list_account, call_add='call_add').pack())
+            callback_data=FAddConsumptionCallback(call_data=list_account, call_add='F_call_add').pack())
     select_account_for_expenses_kb.adjust(1)
     return select_account_for_expenses_kb.as_markup()
 
@@ -210,9 +219,10 @@ def choice_of_analytics_keyboard():
     return choice_of_analytics_kb.as_markup()
 
 
-def expense_analysis_account():
+def expense_analysis_account(user_id):
     account_selection_for_analysis_kb = InlineKeyboardBuilder()
-    for list_account in FamilyFinanceServerConfig.show_list:
+    connection = family_finance_server.show_list_of_accounts(user_id=user_id)
+    for list_account in connection:
         account_selection_for_analysis_kb.button(
             text=list_account.split('.')[1],
             callback_data=FAnalysisExpensesCallback(call_data=list_account, call_analysis='F_call_analysis').pack())
@@ -238,7 +248,7 @@ def incomes_keyboard():
     income_kb.button(
         text="➡", callback_data="incomeforward_5")
     income_kb.button(
-        text="Вернуться в кошелёк", callback_data="back_to_wallet")
+        text="Вернуться в кошелёк", callback_data="F_back_to_wallet")
     income_kb.adjust(1)
     return income_kb.as_markup()
 
@@ -256,12 +266,13 @@ def limits_keyboard():
     return limits_kb.as_markup()
 
 
-def withdrawal_of_invoice_for_limit():
+def withdrawal_of_invoice_for_limit(user_id):
     withdrawal_of_invoice_for_limit_kb = InlineKeyboardBuilder()
-    for list_account in FamilyFinanceServerConfig.show_list:
+    connection = family_finance_server.show_list_of_accounts(user_id=user_id)
+    for list_account in connection:
         withdrawal_of_invoice_for_limit_kb.button(
             text=list_account.split('.')[1],
-            callback_data=LimitsCallback(call_data=list_account, call_limits='F_call_limits').pack())
+            callback_data=FLimitsCallback(call_data=list_account, call_limits='F_call_limits').pack())
     withdrawal_of_invoice_for_limit_kb.adjust(1)
     return withdrawal_of_invoice_for_limit_kb.as_markup()
 
@@ -288,12 +299,13 @@ def category_limits_keyboard():
     return category_limits_kb.as_markup()
 
 
-def deleting_a_limit():
+def deleting_a_limit(user_id):
     deleting_a_limit_kb = InlineKeyboardBuilder()
-    for list_limit in FamilyFinanceServerConfig.show_list:
+    connection = family_finance_server.show_list_of_accounts(user_id=user_id)
+    for list_limit in connection:
         deleting_a_limit_kb.button(
             text=list_limit.split('.')[1],
-            callback_data=DelLimitsCallback(call_data=list_limit, call_dellimits='F_call_dellimits').pack())
+            callback_data=FDelLimitsCallback(call_data=list_limit, call_dellimits='F_call_dellimits').pack())
 
     deleting_a_limit_kb.button(
         text="Назад",
@@ -303,9 +315,12 @@ def deleting_a_limit():
     return deleting_a_limit_kb.as_markup()
 
 
-def del_limit():
+def del_limit(account_id):
     del_limit_kb = InlineKeyboardBuilder()
-    for category_limit in FamilyFinanceServerConfig.category_limit:
-        del_limit_kb.button(text=category_limit.split(',')[1], callback_data=category_limit)
+    connection = family_finance_server.list_of_limits(account_id=account_id)
+    for category_limit in connection:
+        del_limit_kb.button(text=category_limit.split(',')[1],
+                            callback_data=FListDelLimitsCallback(call_data=category_limit,
+                                                                 call_listdellimits='F_call_listdellimits').pack())
         del_limit_kb.adjust(1)
     return del_limit_kb.as_markup()

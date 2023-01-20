@@ -6,7 +6,6 @@ from aiogram import F
 from Finance.keyboards import *
 from Finance.states import CreatingAnAccount
 from FinanceServer.finance_connection import finance_server
-from FinanceServer.finance_connection import FinanceServerConfig as Fsc
 from Finance.analytics import ACCOUNT_ID
 
 router = Router()
@@ -157,12 +156,12 @@ async def back_to_wallet(query: CallbackQuery):
 async def account_selection(query: CallbackQuery):
     user_id = query.from_user.id
     connection = finance_server.show_list_of_accounts(user_id=user_id)
-    if not Fsc.show_list:
+    if not connection:
         await query.answer("Нет счёта для удаления!")
         await personal_account(query)
     else:
         await query.message.edit_text("Выберите счёт для удаления:")
-        await query.message.edit_reply_markup(choose_an_account_keyboard())
+        await query.message.edit_reply_markup(choose_an_account_keyboard(user_id))
 
 
 @router.callback_query(lambda back_to_wallet_call: back_to_wallet_call.data == "back_to_wallet")

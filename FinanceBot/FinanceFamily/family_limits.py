@@ -6,7 +6,6 @@ from FinanceFamily.family_keyboards import *
 from aiogram import F
 from FinanceFamily.family_states import *
 from FinanceServer.family_finance_connection import family_finance_server
-from FinanceServer.family_finance_connection import FamilyFinanceServerConfig as FFsc
 
 router = Router()
 
@@ -22,14 +21,14 @@ async def limit(query: CallbackQuery):
 async def add_limit(query: CallbackQuery, state: FSMContext):
     user_id = query.from_user.id
     connection = family_finance_server.show_list_of_accounts(user_id=user_id)
-    if not FFsc.show_list:
+    if not connection:
         await query.answer("Для начала создайте счёт!")
     else:
         await query.message.edit_text("Выберите счёт:\n\n"
                                       "Если хотите выйти нажмите /Cancel\n"
                                       "Или введите 'Отмена'")
-        await query.message.edit_reply_markup(withdrawal_of_invoice_for_limit())
-        await state.set_state(AddLimits.account_id)
+        await query.message.edit_reply_markup(withdrawal_of_invoice_for_limit(user_id))
+        await state.set_state(FAddLimits.account_id)
 
 
 @router.message(Command(commands=["Cancel"]))
@@ -41,25 +40,25 @@ async def cancellation(message: Message, state: FSMContext):
         reply_markup=creating_or_exiting_limits())
 
 
-@router.callback_query(LimitsCallback.filter(F.call_limits == 'F_call_limits'))
+@router.callback_query(FLimitsCallback.filter(F.call_limits == 'F_call_limits'))
 async def add_limit(query: CallbackQuery, state: FSMContext):
     data = query.data.split('.')[0]
     data = data.split(':')[1]
     await state.update_data(account_id=data)
-    await state.set_state(AddLimits.name_category)
+    await state.set_state(FAddLimits.name_category)
     await query.message.edit_text(
         text="Выберите категорию:")
     await query.message.edit_reply_markup(category_limits_keyboard())
 
 
-@router.callback_query(AddLimits.name_category)
+@router.callback_query(FAddLimits.name_category)
 async def add_limit_category(query: CallbackQuery, state: FSMContext):
     await state.update_data(name_category=query.data)
-    await state.set_state(AddLimits.amount_limit)
+    await state.set_state(FAddLimits.amount_limit)
     await query.message.edit_text("Установите сумму лимита:")
 
 
-@router.message(AddLimits.amount_limit)
+@router.message(FAddLimits.amount_limit)
 async def add_limit_amount(message: Message, state: FSMContext):
     if len(message.text) > 10:
         await message.answer("Не корректное число")
@@ -99,27 +98,27 @@ async def add_limit_amount(message: Message, state: FSMContext):
 async def remove_limit(query: CallbackQuery):
     user_id = query.from_user.id
     connection = family_finance_server.show_list_of_accounts(user_id=user_id)
-    if not FFsc.show_list:
+    if not connection:
         await query.answer("Для начала создайте счёт!")
     else:
         await query.message.edit_text("Выберите счёт.")
-        await query.message.edit_reply_markup(deleting_a_limit())
+        await query.message.edit_reply_markup(deleting_a_limit(user_id))
 
 
-@router.callback_query(DelLimitsCallback.filter(F.call_dellimits == 'F_call_dellimits'))
+@router.callback_query(FDelLimitsCallback.filter(F.call_dellimits == 'F_call_dellimits'))
 async def add_limit(query: CallbackQuery):
     data = query.data.split('.')[0]
     data = data.split(':')[1]
     connection = family_finance_server.list_of_limits(account_id=data)
-    if not FFsc.category_limit:
+    if not connection:
         await query.answer("Нет лимитов для удаления!")
     else:
         await query.message.edit_text("Выберите лимит для удаления")
-        await query.message.edit_reply_markup(del_limit())
+        await query.message.edit_reply_markup(del_limit(data))
 
 
-@router.callback_query(F.data.in_(FFsc.category_limit))
-async def test1(query: CallbackQuery):
+@router.callback_query(FListDelLimitsCallback.filter(F.call_listdellimits == 'F_call_listdellimits'))
+async def del_limits(query: CallbackQuery):
     data = query.data.split(',')[0]
     connection = family_finance_server.limit_deletion(limit_deletion=data)
     await query.answer(f"Лимит удален!")

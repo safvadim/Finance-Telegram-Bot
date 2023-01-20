@@ -5,26 +5,26 @@ class UserToken(StatesGroup):
     token = State()
 
 
-class CreatingAnAccountFamily(StatesGroup):
+class FCreatingAnAccount(StatesGroup):
     currency = State()
     name_currency = State()
     balance = State()
 
 
-class AddExpenses(StatesGroup):
+class FAddExpenses(StatesGroup):
     category = State()
     title = State()
     amount_expenses = State()
     account_id = State()
 
 
-class AddIncome(StatesGroup):
+class FAddIncome(StatesGroup):
     source_of_income = State()
     amount_income = State()
     account_id = State()
 
 
-class AddLimits(StatesGroup):
+class FAddLimits(StatesGroup):
     account_id = State()
     name_category = State()
     amount_limit = State()

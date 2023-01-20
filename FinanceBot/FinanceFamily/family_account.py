@@ -87,7 +87,7 @@ async def creating_an_account(query: CallbackQuery, state: FSMContext):
                                   "Если хотите выйти нажмите /Cancel\n"
                                   "Или введите 'Отмена'")
     await query.message.edit_reply_markup(list_of_currencies_keyboard())
-    await state.set_state(CreatingAnAccountFamily.currency)
+    await state.set_state(FCreatingAnAccount.currency)
 
 
 # TODO Отмена
@@ -100,25 +100,25 @@ async def cancellation(message: Message, state: FSMContext):
         reply_markup=create_another_account_keyboard())
 
 
-@router.callback_query(CreatingAnAccountFamily.currency, F.data.as_(str(currency)))
+@router.callback_query(FCreatingAnAccount.currency, F.data.as_(str(currency)))
 async def account_entry(query: CallbackQuery, state: FSMContext):
     await state.update_data(currency=query.data)
-    await state.set_state(CreatingAnAccountFamily.name_currency)
+    await state.set_state(FCreatingAnAccount.name_currency)
     await query.message.edit_text(
         text="Введите название счёта:")
 
 
-@router.message(CreatingAnAccountFamily.name_currency)
+@router.message(FCreatingAnAccount.name_currency)
 async def account_name_entry(message: Message, state: FSMContext):
     if len(message.text) > 10:
         await message.answer("Слишком длинное название, введите другое:")
     else:
         await state.update_data(name_currency=message.text)
-        await state.set_state(CreatingAnAccountFamily.balance)
+        await state.set_state(FCreatingAnAccount.balance)
         await message.answer(text="Спасибо. Теперь введите сумму средств на счёте:")
 
 
-@router.message(CreatingAnAccountFamily.balance)
+@router.message(FCreatingAnAccount.balance)
 async def amount_entry(message: Message, state: FSMContext):
     if len(message.text) > 10:
         await message.answer("Не корректное число")
@@ -157,7 +157,7 @@ async def amount_entry(message: Message, state: FSMContext):
             await message.answer("Неверный формат, введите ещё раз:")
 
 
-@router.callback_query(lambda back: back.data == "back_wallet")
+@router.callback_query(lambda back: back.data == "F_back_to_wallet")
 async def back_to_wallet(query: CallbackQuery):
     user_id = query.from_user.id
     connection = family_finance_server.show_all_family_accounts(user_id=user_id)
@@ -166,16 +166,16 @@ async def back_to_wallet(query: CallbackQuery):
 
 
 # TODO Удаление счета
-@router.callback_query(lambda family_delete_call: family_delete_call.data == "family_delete")
+@router.callback_query(lambda family_delete_call: family_delete_call.data == "F_delete")
 async def account_selection(query: CallbackQuery):
     user_id = query.from_user.id
     connection = family_finance_server.show_list_of_accounts(user_id=user_id)
-    if not Fsc.show_list:
+    if not connection:
         await query.answer("Нет счёта для удаления!")
         await family_user_verification(query)
     else:
         await query.message.edit_text("Выберите счёт для удаления:")
-        await query.message.edit_reply_markup(choose_an_account_keyboard())
+        await query.message.edit_reply_markup(choose_an_account_keyboard(user_id))
 
 
 @router.callback_query(lambda back_to_wallet_call: back_to_wallet_call.data == "F_back_to_wallet")
@@ -184,7 +184,7 @@ async def back_to_account(query: CallbackQuery):
     await family_user_verification(query)
 
 
-@router.callback_query(AccountCallback.filter(F.call == 'call'))
+@router.callback_query(FAccountCallback.filter(F.call == 'F_call'))
 async def delete_accounts(query: CallbackQuery):
     get_id = query.data.split('.')[0]
     get_id = get_id.split(':')[1]

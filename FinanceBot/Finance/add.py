@@ -6,7 +6,6 @@ from Finance.keyboards import *
 from Finance.states import AddIncome, AddExpenses
 from aiogram import F
 from FinanceServer.finance_connection import finance_server
-from FinanceServer.finance_connection import FinanceServerConfig as Fsc
 
 router = Router()
 
@@ -23,13 +22,13 @@ async def add(query: CallbackQuery):
 async def adding_costs(query: CallbackQuery, state: FSMContext):
     user_id = query.from_user.id
     connection = finance_server.show_list_of_accounts(user_id=user_id)
-    if not Fsc.show_list:
+    if not connection:
         await query.answer("Для начала создайте счёт!")
     else:
         await query.message.edit_text("Пожалуйста, выберите счёт:\n\n"
                                       "Если хотите выйти нажмите /Cancel\n"
                                       "Или введите 'Отмена'")
-        await query.message.edit_reply_markup(select_account_for_expenses())
+        await query.message.edit_reply_markup(select_account_for_expenses(user_id))
         await state.set_state(AddExpenses.account_id)
 
 
@@ -146,11 +145,11 @@ async def amount_entry(message: Message, state: FSMContext):
 async def add_income(query: CallbackQuery, state: FSMContext):
     user_id = query.from_user.id
     connection = finance_server.show_list_of_accounts(user_id=user_id)
-    if not Fsc.show_list:
+    if not connection:
         await query.answer("Для начала создайте счёт!")
     else:
         await query.message.edit_text("Пожалуйста, выберите счёт:")
-        await query.message.edit_reply_markup(income_account_selection())
+        await query.message.edit_reply_markup(income_account_selection(user_id))
         await state.set_state(AddIncome.account_id)
 
 

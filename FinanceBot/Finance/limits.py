@@ -6,7 +6,6 @@ from Finance.keyboards import *
 from aiogram import F
 from Finance.states import AddLimits
 from FinanceServer.finance_connection import finance_server
-from FinanceServer.finance_connection import FinanceServerConfig as Fsc
 
 router = Router()
 
@@ -22,13 +21,13 @@ async def limit(query: CallbackQuery):
 async def add_limit(query: CallbackQuery, state: FSMContext):
     user_id = query.from_user.id
     connection = finance_server.show_list_of_accounts(user_id=user_id)
-    if not Fsc.show_list:
+    if not connection:
         await query.answer("Для начала создайте счёт!")
     else:
         await query.message.edit_text("Выберите счёт:\n\n"
                                       "Если хотите выйти нажмите /Cancel\n"
                                       "Или введите 'Отмена'")
-        await query.message.edit_reply_markup(withdrawal_of_invoice_for_limit())
+        await query.message.edit_reply_markup(withdrawal_of_invoice_for_limit(user_id))
         await state.set_state(AddLimits.account_id)
 
 
@@ -99,11 +98,11 @@ async def add_limit_amount(message: Message, state: FSMContext):
 async def remove_limit(query: CallbackQuery):
     user_id = query.from_user.id
     connection = finance_server.show_list_of_accounts(user_id=user_id)
-    if not Fsc.show_list:
+    if not connection:
         await query.answer("Для начала создайте счёт!")
     else:
         await query.message.edit_text("Выберите счёт.")
-        await query.message.edit_reply_markup(deleting_a_limit())
+        await query.message.edit_reply_markup(deleting_a_limit(user_id))
 
 
 @router.callback_query(DelLimitsCallback.filter(F.call_dellimits == 'call_dellimits'))
@@ -111,15 +110,15 @@ async def add_limit(query: CallbackQuery):
     data = query.data.split('.')[0]
     data = data.split(':')[1]
     connection = finance_server.list_of_limits(account_id=data)
-    if not Fsc.category_limit:
+    if not connection:
         await query.answer("Нет лимитов для удаления!")
     else:
         await query.message.edit_text("Выберите лимит для удаления")
-        await query.message.edit_reply_markup(del_limit())
+        await query.message.edit_reply_markup(del_limit_keyboard(data))
 
 
-@router.callback_query(F.data.in_(Fsc.category_limit))
-async def test1(query: CallbackQuery):
+@router.callback_query(ListDelLimitsCallback.filter(F.call_listdellimits == 'call_listdellimits'))
+async def del_limit(query: CallbackQuery):
     data = query.data.split(',')[0]
     connection = finance_server.limit_deletion(limit_deletion=data)
     await query.answer(f"Лимит удален!")

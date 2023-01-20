@@ -3,7 +3,7 @@ from aiogram.types import CallbackQuery
 from FinanceFamily.family_keyboards import *
 from aiogram import F
 from FinanceServer.family_finance_connection import family_finance_server
-from FinanceServer.family_finance_connection import FamilyFinanceServerConfig as FFsc
+
 
 router = Router()
 
@@ -20,11 +20,11 @@ async def analytics(query: CallbackQuery):
 async def analyst_expense(query: CallbackQuery):
     user_id = query.from_user.id
     connection = family_finance_server.show_list_of_accounts(user_id=user_id)
-    if not FFsc.show_list:
+    if not connection:
         await query.answer("Для начала создайте счёт!")
     else:
         await query.message.edit_text("Выберите счёт для анализа:")
-        await query.message.edit_reply_markup(expense_analysis_account())
+        await query.message.edit_reply_markup(expense_analysis_account(user_id))
 
 
 @router.callback_query(FAnalysisExpensesCallback.filter(F.call_analysis == 'F_call_analysis'))
@@ -33,7 +33,7 @@ async def withdrawal_from_expense(query: CallbackQuery):
     data = data.split(':')[1]
     ACCOUNT_ID.append(int(data))
     connection = family_finance_server.cost_analytics(account_id=data)
-    if not FFsc.expenses_list:
+    if not connection:
         await query.answer("У вас ещё нет расходов!")
     else:
         await query.message.edit_text(f"{connection}\n\nРасходы за месяц: /month"
@@ -75,24 +75,24 @@ async def cost_pagination(query: CallbackQuery):
     await query.message.edit_reply_markup(expenses_kb.as_markup())
 
 
-@router.callback_query(lambda by_income_call: by_income_call.data == "by_income")
+@router.callback_query(lambda by_income_call: by_income_call.data == "F_by_income")
 async def revenue_analytics(query: CallbackQuery):
     user_id = query.from_user.id
     connection = family_finance_server.show_list_of_accounts(user_id=user_id)
-    if not FFsc.show_list:
+    if not connection:
         await query.answer("Для начала создайте счёт!")
     else:
         await query.message.edit_text("Выберите счёт для анализа:")
-        await query.message.edit_reply_markup(income_analysis_account())
+        await query.message.edit_reply_markup(income_analysis_account(user_id))
 
 
-@router.callback_query(AnalysisIncomeCallback.filter(F.call_analysis == 'call_analysis'))
+@router.callback_query(FAnalysisIncomeCallback.filter(F.call_analysis == 'F_call_analysis'))
 async def withdrawal_from_income(query: CallbackQuery):
     data = query.data.split('.')[0]
     data = data.split(':')[1]
     ACCOUNT_ID.append(int(data))
     connection = family_finance_server.revenue_analytics(account_id=data)
-    if not FFsc.income_list:
+    if not connection:
         await query.answer("У вас ещё нет доходов!")
     else:
         await query.message.edit_text(f"{connection}\n\nДоходы за месяц: /month"

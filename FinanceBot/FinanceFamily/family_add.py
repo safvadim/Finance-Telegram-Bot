@@ -6,7 +6,6 @@ from FinanceFamily.family_keyboards import *
 from FinanceFamily.family_states import *
 from aiogram import F
 from FinanceServer.family_finance_connection import family_finance_server
-from FinanceServer.family_finance_connection import FamilyFinanceServerConfig as FFsc
 
 router = Router()
 
@@ -23,14 +22,14 @@ async def family_add(query: CallbackQuery):
 async def adding_costs(query: CallbackQuery, state: FSMContext):
     user_id = query.from_user.id
     connection = family_finance_server.show_list_of_accounts(user_id=user_id)
-    if not FFsc.show_list:
+    if not connection:
         await query.answer("Для начала создайте счёт!")
     else:
         await query.message.edit_text("Пожалуйста, выберите счёт:\n\n"
                                       "Если хотите выйти нажмите /Cancel\n"
                                       "Или введите 'Отмена'")
-        await query.message.edit_reply_markup(select_account_for_expenses())
-        await state.set_state(AddExpenses.account_id)
+        await query.message.edit_reply_markup(select_account_for_expenses(user_id))
+        await state.set_state(FAddExpenses.account_id)
 
 
 @router.message(Command(commands=["Cancel"]))
@@ -42,35 +41,35 @@ async def cancellation(message: Message, state: FSMContext):
         reply_markup=create_more_expenses_keyboard())
 
 
-@router.callback_query(AddConsumptionCallback.filter(F.call_add == 'call_add'))
+@router.callback_query(FAddConsumptionCallback.filter(F.call_add == 'F_call_add'))
 async def account_id_entry(query: CallbackQuery, state: FSMContext):
     data = query.data.split('.')[0]
     data = data.split(':')[1]
     await state.update_data(account_id=int(data))
-    await state.set_state(AddExpenses.category)
+    await state.set_state(FAddExpenses.category)
     await query.message.edit_text(
         text="Выберите категорию:")
     await query.message.edit_reply_markup(consumption_keyboard())
 
 
-@router.callback_query(AddExpenses.category, F.data.as_(str(category_list)))
+@router.callback_query(FAddExpenses.category, F.data.as_(str(category_list)))
 async def category_entry(query: CallbackQuery, state: FSMContext):
     await state.update_data(category=query.data)
-    await state.set_state(AddExpenses.title)
+    await state.set_state(FAddExpenses.title)
     await query.message.answer("Введите название покупки:")
 
 
-@router.message(AddExpenses.title)
+@router.message(FAddExpenses.title)
 async def title_entry(message: Message, state: FSMContext):
     if len(message.text) > 50:
         await message.answer("Слишком длинное название, попробуйте ещё раз:")
     else:
         await state.update_data(title=message.text)
-        await state.set_state(AddExpenses.amount_expenses)
+        await state.set_state(FAddExpenses.amount_expenses)
         await message.answer("Спасибо. Введите сумму:")
 
 
-@router.message(AddExpenses.amount_expenses)
+@router.message(FAddExpenses.amount_expenses)
 async def amount_entry(message: Message, state: FSMContext):
     if len(message.text) > 10:
         await message.answer("Не корректное число")
@@ -146,12 +145,12 @@ async def amount_entry(message: Message, state: FSMContext):
 async def add_income(query: CallbackQuery, state: FSMContext):
     user_id = query.from_user.id
     connection = family_finance_server.show_list_of_accounts(user_id=user_id)
-    if not FFsc.show_list:
+    if not connection:
         await query.answer("Для начала создайте счёт!")
     else:
         await query.message.edit_text("Пожалуйста, выберите счёт:")
-        await query.message.edit_reply_markup(income_account_selection())
-        await state.set_state(AddIncome.account_id)
+        await query.message.edit_reply_markup(income_account_selection(user_id))
+        await state.set_state(FAddIncome.account_id)
 
 
 @router.message(Command(commands=["Cancel"]))
@@ -163,27 +162,27 @@ async def cancellation(message: Message, state: FSMContext):
         reply_markup=create_more_income_keyboard())
 
 
-@router.callback_query(AddIncome.account_id, AddIncomeCallback.filter(F.call_add == 'call_add'))
+@router.callback_query(FAddIncome.account_id, FAddIncomeCallback.filter(F.call_add == 'F_call_add'))
 async def account_id_record(query: CallbackQuery, state: FSMContext):
     data = query.data.split('.')[0]
     data = data.split(':')[1]
     await state.update_data(account_id=int(data))
-    await state.set_state(AddIncome.source_of_income)
+    await state.set_state(FAddIncome.source_of_income)
     await query.message.edit_text(
         text="Введите источник дохода:")
 
 
-@router.message(AddIncome.source_of_income)
+@router.message(FAddIncome.source_of_income)
 async def source_of_income_record(message: Message, state: FSMContext):
     if len(message.text) > 10:
         await message.answer("Недопустимая длинна текста, введите ещё раз:")
     else:
         await state.update_data(source_of_income=message.text)
-        await state.set_state(AddIncome.amount_income)
+        await state.set_state(FAddIncome.amount_income)
         await message.answer("Спасибо. Введите сумму:")
 
 
-@router.message(AddIncome.amount_income)
+@router.message(FAddIncome.amount_income)
 async def source_of_income(message: Message, state: FSMContext):
     if len(message.text) > 10:
         await message.answer("Не корректное число, введите ещё раз:")

@@ -1,6 +1,6 @@
 from aiogram.filters.callback_data import CallbackData
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from FinanceServer.finance_connection import FinanceServerConfig
+from FinanceServer.finance_connection import finance_server
 
 
 class AccountCallback(CallbackData, prefix='account'):
@@ -36,6 +36,11 @@ class LimitsCallback(CallbackData, prefix='limits'):
 class DelLimitsCallback(CallbackData, prefix='dellimits'):
     call_data: str
     call_dellimits: str
+
+
+class ListDelLimitsCallback(CallbackData, prefix='listdellimits'):
+    call_data: str
+    call_listdellimits: str
 
 
 # TODO Старт
@@ -129,9 +134,10 @@ def create_more_income_keyboard():
 
 
 # TODO Выбор счета
-def choose_an_account_keyboard():
+def choose_an_account_keyboard(user_id):
     choose_an_account_kb = InlineKeyboardBuilder()
-    for list_account in FinanceServerConfig.show_list:
+    connection = finance_server.show_list_of_accounts(user_id=user_id)
+    for list_account in connection:
         choose_an_account_kb.button(
             text=list_account.split('.')[1],
             callback_data=AccountCallback(call_data=list_account, call='call').pack())
@@ -139,9 +145,10 @@ def choose_an_account_keyboard():
     return choose_an_account_kb.as_markup()
 
 
-def select_account_for_expenses():
+def select_account_for_expenses(user_id):
     select_account_for_expenses_kb = InlineKeyboardBuilder()
-    for list_account in FinanceServerConfig.show_list:
+    connection = finance_server.show_list_of_accounts(user_id=user_id)
+    for list_account in connection:
         select_account_for_expenses_kb.button(
             text=list_account.split('.')[1],
             callback_data=AddConsumptionCallback(call_data=list_account, call_add='call_add').pack())
@@ -149,9 +156,10 @@ def select_account_for_expenses():
     return select_account_for_expenses_kb.as_markup()
 
 
-def income_account_selection():
+def income_account_selection(user_id):
     income_account_selection_kb = InlineKeyboardBuilder()
-    for list_account in FinanceServerConfig.show_list:
+    connection = finance_server.show_list_of_accounts(user_id=user_id)
+    for list_account in connection:
         income_account_selection_kb.button(
             text=list_account.split('.')[1],
             callback_data=AddIncomeCallback(call_data=list_account, call_add='call_add').pack())
@@ -159,9 +167,10 @@ def income_account_selection():
     return income_account_selection_kb.as_markup()
 
 
-def income_analysis_account():
+def income_analysis_account(user_id):
     account_selection_for_analysis_kb = InlineKeyboardBuilder()
-    for list_account in FinanceServerConfig.show_list:
+    connection = finance_server.show_list_of_accounts(user_id=user_id)
+    for list_account in connection:
         account_selection_for_analysis_kb.button(
             text=list_account.split('.')[1],
             callback_data=AnalysisIncomeCallback(call_data=list_account, call_analysis='call_analysis').pack())
@@ -172,9 +181,10 @@ def income_analysis_account():
     return account_selection_for_analysis_kb.as_markup()
 
 
-def expense_analysis_account():
+def expense_analysis_account(user_id):
     account_selection_for_analysis_kb = InlineKeyboardBuilder()
-    for list_account in FinanceServerConfig.show_list:
+    connection = finance_server.show_list_of_accounts(user_id=user_id)
+    for list_account in connection:
         account_selection_for_analysis_kb.button(
             text=list_account.split('.')[1],
             callback_data=AnalysisExpensesCallback(call_data=list_account, call_analysis='call_analysis').pack())
@@ -185,9 +195,10 @@ def expense_analysis_account():
     return account_selection_for_analysis_kb.as_markup()
 
 
-def withdrawal_of_invoice_for_limit():
+def withdrawal_of_invoice_for_limit(user_id):
     withdrawal_of_invoice_for_limit_kb = InlineKeyboardBuilder()
-    for list_account in FinanceServerConfig.show_list:
+    connection = finance_server.show_list_of_accounts(user_id=user_id)
+    for list_account in connection:
         withdrawal_of_invoice_for_limit_kb.button(
             text=list_account.split('.')[1],
             callback_data=LimitsCallback(call_data=list_account, call_limits='call_limits').pack())
@@ -195,9 +206,10 @@ def withdrawal_of_invoice_for_limit():
     return withdrawal_of_invoice_for_limit_kb.as_markup()
 
 
-def deleting_a_limit():
+def deleting_a_limit(user_id):
     deleting_a_limit_kb = InlineKeyboardBuilder()
-    for list_limit in FinanceServerConfig.show_list:
+    connection = finance_server.show_list_of_accounts(user_id=user_id)
+    for list_limit in connection:
         deleting_a_limit_kb.button(
             text=list_limit.split('.')[1],
             callback_data=DelLimitsCallback(call_data=list_limit, call_dellimits='call_dellimits').pack())
@@ -303,10 +315,13 @@ def creating_or_exiting_limits():
     return creating_or_exiting_limits_kb.as_markup()
 
 
-def del_limit():
+def del_limit_keyboard(account_id):
     del_limit_kb = InlineKeyboardBuilder()
-    for category_limit in FinanceServerConfig.category_limit:
-        del_limit_kb.button(text=category_limit.split(',')[1], callback_data=category_limit)
+    connection = finance_server.list_of_limits(account_id=account_id)
+    for category_limit in connection:
+        del_limit_kb.button(text=category_limit.split(',')[1],
+                            callback_data=ListDelLimitsCallback(call_data=category_limit,
+                                                                call_listdellimits='call_listdellimits').pack())
         del_limit_kb.adjust(1)
     return del_limit_kb.as_markup()
 
