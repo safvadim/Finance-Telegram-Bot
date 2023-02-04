@@ -4,19 +4,20 @@ import requests
 class FamilyFinanceServerConfig:
     limit = 5
     base_url = "http://localhost:8000/"
-    category_limit = list()
 
     # TODO Проверка пользователя и добавление его в базу
     def user_verification(self, user_id: int):
         family_search_query = requests.get(f"{self.base_url}family_users/{user_id}")
         if family_search_query.status_code == 200:
-            return f"Input"
+            return True
         else:
-            return f"False"
+            return False
 
-    def wallet_creation(self, user_data: dict, family_data: dict):
+    def wallet_creation(self, user_data: dict):
         request_to_add_user = requests.post(f"{self.base_url}users/", json=user_data)
-        request_to_add_user.raise_for_status()
+        return request_to_add_user.raise_for_status()
+
+    def family_wallet_creation(self, family_data: dict):
         request_to_add_family = requests.post(f"{self.base_url}family_users/", json=family_data)
         request_to_add_family.raise_for_status()
         return f"Добро пожаловать в семейный кошелёк!"

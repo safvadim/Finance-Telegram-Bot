@@ -32,13 +32,15 @@ def welcome(hour: int):
 # TODO Старт
 @router.message(Command(commands=["start"]))
 async def command_start(message: Message):
-    hour = int(message.date.astimezone().hour)
+    hour = str(message.date.astimezone().hour)
+    if hour[0] == '0':
+        hour = int(hour[1:])
     user_id = message.from_user.id
     full_name = message.from_user.full_name
     date = f"{message.date.day}.{message.date.month}.{message.date.year}"
     user_data = dict(user_id=user_id, full_name=full_name, date=date)
     connection = finance_server.user_verification(user_id=user_id, user_data=user_data)
-    await message.answer(f"{welcome(hour)}<b>{message.from_user.full_name}!</b>",
+    await message.answer(f"{welcome(int(hour))}<b>{message.from_user.full_name}!</b>",
                          reply_markup=start_keyboard())
 
 

@@ -11,7 +11,6 @@ from Finance.keyboards import start_keyboard
 from FinanceFamily.family_keyboards import *
 from FinanceFamily.family_states import *
 from FinanceServer.family_finance_connection import family_finance_server
-from FinanceServer.family_finance_connection import FamilyFinanceServerConfig as Fsc
 from Finance.analytics import ACCOUNT_ID
 
 router = Router()
@@ -22,7 +21,7 @@ router = Router()
 async def family_user_verification(query: CallbackQuery):
     user_id = query.from_user.id
     connection = family_finance_server.user_verification(user_id=user_id)
-    if connection == 'Input':
+    if connection:
         connection_input = family_finance_server.show_all_family_accounts(user_id=user_id)
         await query.message.edit_text(f"{connection_input}")
         await query.message.edit_reply_markup(family_account_keyboard())
@@ -39,7 +38,8 @@ async def family_user_create(query: CallbackQuery):
     date = f"{query.message.date.day}.{query.message.date.month}.{query.message.date.year}"
     user_data = dict(user_id=f"F{user_id}", full_name=full_name, token=token, date=date)
     family_data = dict(family_user_id=f"F{user_id}", user_id=user_id, full_name=full_name)
-    connection = family_finance_server.wallet_creation(user_data=user_data, family_data=family_data)
+    connection = family_finance_server.wallet_creation(user_data=user_data)
+    connection = family_finance_server.family_wallet_creation(family_data=family_data)
     await query.message.answer(f"{connection}\nВаш токен:\n{token}")
     await family_user_verification(query)
 
@@ -47,8 +47,10 @@ async def family_user_create(query: CallbackQuery):
 # TODO Вернуться в старт
 @router.callback_query(lambda F_main_menu_call: F_main_menu_call.data == "F_main_menu")
 async def return_to_start(query: CallbackQuery):
-    hour = int(query.message.date.astimezone().hour)
-    await query.message.edit_text(f"{welcome(hour)}<b>{query.from_user.full_name}!</b>")
+    hour = str(query.message.date.astimezone().hour)
+    if hour[0] == '0':
+        hour = int(hour[1:])
+    await query.message.edit_text(f"{welcome(int(hour))}<b>{query.from_user.full_name}!</b>")
     await query.message.edit_reply_markup(start_keyboard())
 
 
